@@ -12,19 +12,24 @@ pipeline {
             }
         }
         stage ('blaze'){
-        steps{    
-            dir('blaze'){
-                sh 'sed -i \'s/{build}/$BUILD_NUMBER/g\' index.html'
-                sh 'docker rmi liorruslander/blaze:v2 '
-                sh 'docker build -t liorruslander/blaze:v2 .'
-                sh 'docker push liorruslander/blaze:v2'
+            environment {
+            BUILD_NUMBER = "${env.BUILD_NUMBER}"
+                
+            }
+            steps{    
+                dir('blaze'){
+                    sh 'sed -i \'s/{build}/$BUILD_NUMBER/g\' index.html'
+                    sh 'docker rmi liorruslander/blaze:v2 '
+                    sh 'docker build -t liorruslander/blaze:v2 .'
+        
+                    sh 'docker push liorruslander/blaze:v2'
 
+                }
             }
         }
-        }
-        stage('pull') {
+        stage('deploy k8s') {
             steps {
-                sh 'docker pull nginx'
+                sh '/var/jenkins_home/kubectl/kubectl  --kubeconfig /var/jenkins_home/kubectl/config delete pods `/var/jenkins_home/kubectl/kubectl  --kubeconfig /var/jenkins_home/kubectl/config get pods | cut -f 1 -d \' \' | grep nginx-dep`'
             }
         }
     }
