@@ -1,9 +1,30 @@
 pipeline {
-    agent { docker { image 'maven:3.3.3' } }
+    agent any
     stages {
-        stage('build') {
+        stage('clear-workspace'){
+            steps{
+                sh 'rm -rf blaze'
+            }
+        }
+        stage('clone'){
+            steps{
+                sh 'git clone  https://github.com/liorrus/blaze.git'
+            }
+        }
+        stage ('blaze'){
+        steps{    
+            dir('blaze'){
+                sh 'sed -i \'s/{build}/$BUILD_NUMBER/g\' index.html'
+                sh 'docker rmi liorruslander/blaze:v2 '
+                sh 'docker build -t liorruslander/blaze:v2 .'
+                sh 'docker push liorruslander/blaze:v2'
+
+            }
+        }
+        }
+        stage('pull') {
             steps {
-                sh 'mvn --version'
+                sh 'docker pull nginx'
             }
         }
     }
